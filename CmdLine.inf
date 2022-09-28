@@ -1,0 +1,30 @@
+########################################################################
+#
+# CmdLine.inf
+#
+# Author: David Petrovic
+#
+########################################################################
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = CmdLine
+  FILE_GUID                      = bdda79a3-13a5-4de4-bd97-8b07d4024c38
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = ShellCEntryLib
+
+[Sources]
+  CmdLineTest.c
+  CmdLine.c
+  CmdLine.h
+  CmdLineInternal.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+
+[LibraryClasses]
+  ShellCEntryLib
+  UefiLib
+  ShellLib
