@@ -39,6 +39,7 @@ STATIC BOOLEAN IsDecimalString(IN CONST CHAR16 *String);
 STATIC VOID TableError(IN UINTN i, IN CHAR16 *errStr);
 STATIC BOOLEAN ArgNameDefined(IN CHAR16 *HelpStr);
 STATIC UINTN GetArgName(IN CHAR16 *HelpStr, OUT CHAR16* ArgName, IN UINTN ArgNameSize, IN BOOLEAN Mandatory, IN CONST CHAR16 *DefaultArgName);
+STATIC VOID ShowHelp(IN CONST CHAR16 *ProgName, IN UINTN ManParmCount, IN PARAMETER_TABLE *ParamTable, IN SWITCH_TABLE *SwTable, IN CONST CHAR16 *ProgHelpStr);
 
 // globals
 STATIC CHAR16 BreakSwStr1[] = L"-b";
@@ -75,7 +76,8 @@ SHELL_STATUS ParseCmdLine(IN CONST CHAR16 *ProgName, IN UINTN ManParmCount, IN P
         if (SwTable[i].SwStr2) OptCount++;
         i++;
     }
-    if (ProgHelpStr) OptCount += 2;
+    // add break and help options
+    OptCount += 4;
     
     // allocate memory for options table
     Memsize = (OptCount+1) * sizeof(SHELL_PARAM_ITEM);
@@ -99,15 +101,19 @@ SHELL_STATUS ParseCmdLine(IN CONST CHAR16 *ProgName, IN UINTN ManParmCount, IN P
         }
         i++;
     }
-    // add help options
-    if (ProgHelpStr) {
-        ParamList[j].Name = HelpSwStr1;
-        ParamList[j].Type = TypeFlag;
-        j++;
-        ParamList[j].Name = HelpSwStr2;
-        ParamList[j].Type = TypeFlag;
-        j++;
-    }
+    // add break and help options
+    ParamList[j].Name = BreakSwStr1;
+    ParamList[j].Type = TypeFlag;
+    j++;
+    ParamList[j].Name = BreakSwStr2;
+    ParamList[j].Type = TypeFlag;
+    j++;
+    ParamList[j].Name = HelpSwStr1;
+    ParamList[j].Type = TypeFlag;
+    j++;
+    ParamList[j].Name = HelpSwStr2;
+    ParamList[j].Type = TypeFlag;
+    j++;
     ParamList[j].Name = NULL;
     ParamList[j].Type = TypeMax;
    
@@ -133,7 +139,7 @@ SHELL_STATUS ParseCmdLine(IN CONST CHAR16 *ProgName, IN UINTN ManParmCount, IN P
     }
 
     //------------
-    // HELP 
+    // BREAK
     //------------
 
     if (ShellCommandLineGetFlag(Package, BreakSwStr1) || ShellCommandLineGetFlag(Package, BreakSwStr2)) {
@@ -142,86 +148,12 @@ SHELL_STATUS ParseCmdLine(IN CONST CHAR16 *ProgName, IN UINTN ManParmCount, IN P
         ShellSetPageBreakMode(FALSE);
     }
 
+    //------------
+    // HELP 
+    //------------
+
     if (ShellCommandLineGetFlag(Package, HelpSwStr1) || ShellCommandLineGetFlag(Package, HelpSwStr2)) {
-        const UINTN ArgNameSize = 24;
-        CHAR16 ArgName[ArgNameSize];
-        UINTN HelpIdx;
-
-        // initialise padding string
-        const UINTN PadSize = 20;
-        CHAR16 pad[PadSize];
-        for (UINTN i=0; i<PadSize; i++) {
-            pad[i] = L' ';
-        }
-        pad[PadSize-1] = L'\0';
-
-        // program description
-        Print(L"\n");
-        
-        if (ProgHelpStr) {
-            Print(L"%s\n\n", ProgHelpStr);
-        }
-
-        // usage
-        Print(L"Usage: %s", ProgName);
-        i = 0;
-        while (ParamTable[i].ValueType != VALTYPE_NONE) {
-            GetArgName(ParamTable[i].HelpStr, ArgName, ArgNameSize, (i+1 <= ManParmCount), DefaultArgName);
-            Print(L" %s", ArgName);
-            i++;
-        }
-        Print(L" [options]\n");
-
-        // Parameter help
-        Print(L"\n Parameters:\n");
-        i = 0;
-        while (ParamTable[i].ValueType != VALTYPE_NONE) {
-            HelpIdx = GetArgName(ParamTable[i].HelpStr, ArgName, ArgNameSize, (i+1 <= ManParmCount), DefaultArgName);
-            // get rid of spaces below ###
-            Print(L"  %s%s     %s\n", ArgName, &pad[StrLen(ArgName)], &ParamTable[i].HelpStr[HelpIdx]);
-            i++;
-        }
-        // Switch help
-        Print(L"\n Options:\n");
-        i = 0;
-        while (SwTable[i].SwitchNecessity != NO_SW) {
-            HelpIdx = GetArgName(SwTable[i].HelpStr, ArgName, ArgNameSize, TRUE, (SwTable[i].ValueType == VALTYPE_NONE) ? NULL : DefaultArgName);
-            CHAR16 SeperatorChar = L',';
-            CHAR16 *SwStr1 = SwTable[i].SwStr1;
-            CHAR16 *SwStr2 = SwTable[i].SwStr2;
-            if (!SwStr1) {
-                SwStr1 = &pad[(PadSize-1)-2]; // 2 spaces for short switch
-                SeperatorChar = L' ';
-            }
-            if (!SwStr2) {
-                SwStr2 = &pad[PadSize-1]; // null str
-                SeperatorChar = L' ';
-            }
-            UINTN TotalLen = StrLen(SwStr2) + StrLen(ArgName);
-            CHAR16 *PadStr = (TotalLen > PadSize-1) ? &pad[(PadSize-1)-1] : &pad[TotalLen];
-            Print(L"  %s%c %s %s%s%s", SwStr1, SeperatorChar, SwStr2, ArgName, PadStr, &SwTable[i].HelpStr[HelpIdx]);
-            if (SwTable[i].ValueType == VALTYPE_ENUM) {
-                // print all valid options for enum switches
-                Print(L" (");
-                UINTN j = 0;
-                while (SwTable[i].Data.EnumStrArray[j].Str) {
-                    Print(L"%s", SwTable[i].Data.EnumStrArray[j].Str);
-                    j++;
-                    if (SwTable[i].Data.EnumStrArray[j].Str) {
-                        Print(L"|");
-                    }
-                }
-                Print(L")");
-            }
-            Print(L"\n");
-            i++;
-        }
-
-        // break switch
-        Print(L"  %s, %s %s%s\n", BreakSwStr1, BreakSwStr2, &pad[StrLen(BreakSwStr2)], BreakSwStr);
-        // help switch
-        Print(L"  %s, %s %s%s\n\n", HelpSwStr1, HelpSwStr2, &pad[StrLen(HelpSwStr2)], HelpSwStr);
-
+        ShowHelp(ProgName, ManParmCount, ParamTable, SwTable, ProgHelpStr);
         ShellStatus = SHELL_ABORTED;
         goto Error_exit;
     }
@@ -628,4 +560,89 @@ STATIC UINTN GetArgName(IN CHAR16 *HelpStr, OUT CHAR16* ArgName, IN UINTN ArgNam
     }
 
     return HelpStartIdx;
+}
+/**
+ * Function: ShowHelp
+ * 
+ **/
+STATIC VOID ShowHelp(IN CONST CHAR16 *ProgName, IN UINTN ManParmCount, IN PARAMETER_TABLE *ParamTable, IN SWITCH_TABLE *SwTable, IN CONST CHAR16 *ProgHelpStr)
+{
+    const UINTN ArgNameSize = 24;
+    CHAR16 ArgName[ArgNameSize];
+    UINTN HelpIdx;
+
+    // initialise padding string
+    const UINTN PadSize = 20;
+    CHAR16 pad[PadSize];
+    for (UINTN i=0; i<PadSize; i++) {
+        pad[i] = L' ';
+    }
+    pad[PadSize-1] = L'\0';
+
+    // program description
+    Print(L"\n");
+    
+    if (ProgHelpStr) {
+        Print(L"%s\n\n", ProgHelpStr);
+    }
+
+    // usage
+    Print(L"Usage: %s", ProgName);
+    UINTN i = 0;
+    while (ParamTable[i].ValueType != VALTYPE_NONE) {
+        GetArgName(ParamTable[i].HelpStr, ArgName, ArgNameSize, (i+1 <= ManParmCount), DefaultArgName);
+        Print(L" %s", ArgName);
+        i++;
+    }
+    Print(L" [options]\n");
+
+    // Parameter help
+    Print(L"\n Parameters:\n");
+    i = 0;
+    while (ParamTable[i].ValueType != VALTYPE_NONE) {
+        HelpIdx = GetArgName(ParamTable[i].HelpStr, ArgName, ArgNameSize, (i+1 <= ManParmCount), DefaultArgName);
+        // get rid of spaces below ###
+        Print(L"  %s%s     %s\n", ArgName, &pad[StrLen(ArgName)], &ParamTable[i].HelpStr[HelpIdx]);
+        i++;
+    }
+    // Switch help
+    Print(L"\n Options:\n");
+    i = 0;
+    while (SwTable[i].SwitchNecessity != NO_SW) {
+        HelpIdx = GetArgName(SwTable[i].HelpStr, ArgName, ArgNameSize, TRUE, (SwTable[i].ValueType == VALTYPE_NONE) ? NULL : DefaultArgName);
+        CHAR16 SeperatorChar = L',';
+        CHAR16 *SwStr1 = SwTable[i].SwStr1;
+        CHAR16 *SwStr2 = SwTable[i].SwStr2;
+        if (!SwStr1) {
+            SwStr1 = &pad[(PadSize-1)-2]; // 2 spaces for short switch
+            SeperatorChar = L' ';
+        }
+        if (!SwStr2) {
+            SwStr2 = &pad[PadSize-1]; // null str
+            SeperatorChar = L' ';
+        }
+        UINTN TotalLen = StrLen(SwStr2) + StrLen(ArgName);
+        CHAR16 *PadStr = (TotalLen > PadSize-1) ? &pad[(PadSize-1)-1] : &pad[TotalLen];
+        Print(L"  %s%c %s %s%s%s", SwStr1, SeperatorChar, SwStr2, ArgName, PadStr, &SwTable[i].HelpStr[HelpIdx]);
+        if (SwTable[i].ValueType == VALTYPE_ENUM) {
+            // print all valid options for enum switches
+            Print(L" (");
+            UINTN j = 0;
+            while (SwTable[i].Data.EnumStrArray[j].Str) {
+                Print(L"%s", SwTable[i].Data.EnumStrArray[j].Str);
+                j++;
+                if (SwTable[i].Data.EnumStrArray[j].Str) {
+                    Print(L"|");
+                }
+            }
+            Print(L")");
+        }
+        Print(L"\n");
+        i++;
+    }
+
+    // break switch
+    Print(L"  %s, %s %s%s\n", BreakSwStr1, BreakSwStr2, &pad[StrLen(BreakSwStr2)], BreakSwStr);
+    // help switch
+    Print(L"  %s, %s %s%s\n\n", HelpSwStr1, HelpSwStr2, &pad[StrLen(HelpSwStr2)], HelpSwStr);
 }
