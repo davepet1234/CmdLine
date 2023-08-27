@@ -3,6 +3,7 @@
  CmdLineTest.c
  
  Author: David Petrovic
+ GitHub: https://github.com/davepet1234/CmdLine
 
  Test application to test and demonstate the command line parser.
 
