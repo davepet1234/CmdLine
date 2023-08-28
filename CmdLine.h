@@ -222,6 +222,13 @@
 #define ENUMSTR_END \
     {0,NULL}};
 
+//-------------------------------------
+// Defines
+//-------------------------------------
+
+// Functional options
+#define NO_HELP         0x0001
+#define FORCE_BREAK     0x0002
 
 //-------------------------------------
 // Functions
@@ -236,15 +243,18 @@
                 If no parameters required set this to NULL
   SwTable       Ptr to SWITCH_TABLE defining the expected switches
                 If no switches required set this to NULL
-  NumParams     Ptr to return the number of parameter entered (optional)
   ProgHelpStr   Ptr to help string for program
+  FuncOpt       Functional options (bit values to be ORed)
+                    NO_HELP         no command line help
+                    FORCE_BREAK     force the line break option
+  NumParams     Ptr to return the number of parameter entered (optional)
   
   Returns       SHELL_SUCCESS if all parameters/switches are valid
                 SHELL_INVALID_PARAMETER if problem encountered with parameter/switches passed on cmd line
                 SHELL_OUT_OF_RESOURCES if internal memory error
                 SHELL_ABORTED if help displayed
 **/
-extern SHELL_STATUS ParseCmdLine(IN CONST CHAR16 *ProgName, IN UINTN ManParmCount, IN PARAMETER_TABLE *ParamTable, IN SWITCH_TABLE *SwTable, OUT UINTN *NumParams, IN CHAR16 *ProgHelpStr);
+extern SHELL_STATUS ParseCmdLine(IN CONST CHAR16 *ProgName, IN UINTN ManParmCount, IN PARAMETER_TABLE *ParamTable, IN SWITCH_TABLE *SwTable, IN CHAR16 *ProgHelpStr, IN UINT16 FuncOpt, OUT UINTN *NumParams);
 
 
 #endif // CMD_LINE_H

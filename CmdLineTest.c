@@ -75,25 +75,28 @@ INTN EFIAPI ShellAppMain(IN UINTN Argc, IN CHAR16 **Argv)
     UINTN ParamCount;
         
     // Parse the command line
-    ShellStatus = ParseCmdLine(ProgName, 1, ParamTable, SwitchTable, &ParamCount, ProgHelpStr);
-
-    Print(L"========================================\n");
-    if (ShellStatus == SHELL_SUCCESS) {
-        Print(L"Parameters (%u):\n", ParamCount);
-        Print(L"  Param1      = '%s'\n", Param1);
-        Print(L"  Param2      = %d, 0x%02x\n", Param2, Param2);
-        Print(L"  Param3      = %d, 0x%02x\n", Param3, Param3);
-        Print(L"Options:\n");
-        Print(L"  Flag        = %u\n", Flag);
-        Print(L"  Flag2       = %u\n", Flag2);
-        Print(L"  Colour      = %u\n", Colour);
-        Print(L"  DecValue    = %u\n", DecValue);
-        Print(L"  HexValue    = %u, 0x%02x\n", HexValue, HexValue);
-        Print(L"  IntValue    = %u, 0x%02x\n", IntValue, IntValue);
-        Print(L"  StringValue = '%s'\n", StringValue);
+    ShellStatus = ParseCmdLine(ProgName, 1, ParamTable, SwitchTable, ProgHelpStr, 0, &ParamCount);
+    if (ShellStatus == SHELL_ABORTED){
+        goto Error_exit;
     }
-    Print(L"ShellStatus   = %d\n", ShellStatus);
-    Print(L"========================================\n");
+    ShellPrintEx(-1, -1, L"========================================\n");
+    if (ShellStatus == SHELL_SUCCESS) {
+        ShellPrintEx(-1, -1, L"Parameters (%u):\n", ParamCount);
+        ShellPrintEx(-1, -1, L"  Param1      = '%s'\n", Param1);
+        ShellPrintEx(-1, -1, L"  Param2      = %d, 0x%02x\n", Param2, Param2);
+        ShellPrintEx(-1, -1, L"  Param3      = %d, 0x%02x\n", Param3, Param3);
+        ShellPrintEx(-1, -1, L"Options:\n");
+        ShellPrintEx(-1, -1, L"  Flag        = %u\n", Flag);
+        ShellPrintEx(-1, -1, L"  Flag2       = %u\n", Flag2);
+        ShellPrintEx(-1, -1, L"  Colour      = %u\n", Colour);
+        ShellPrintEx(-1, -1, L"  DecValue    = %u\n", DecValue);
+        ShellPrintEx(-1, -1, L"  HexValue    = %u, 0x%02x\n", HexValue, HexValue);
+        ShellPrintEx(-1, -1, L"  IntValue    = %u, 0x%02x\n", IntValue, IntValue);
+        ShellPrintEx(-1, -1, L"  StringValue = '%s'\n", StringValue);
+    }
+    ShellPrintEx(-1, -1, L"ShellStatus   = %d\n", ShellStatus);
+    ShellPrintEx(-1, -1, L"========================================\n");
 
+Error_exit:
     return ShellStatus;
 }
