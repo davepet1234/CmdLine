@@ -17,9 +17,9 @@
 
 [Sources]
   CmdLineTest.c
-  CmdLine.c
-  CmdLine.h
-  CmdLineInternal.h
+  CmdLine/CmdLine.c
+  CmdLine/CmdLine.h
+  CmdLine/CmdLineInternal.h
 
 [Packages]
   MdePkg/MdePkg.dec
